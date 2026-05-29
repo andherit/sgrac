@@ -1,0 +1,9 @@
+# Local build outputs
+/build/
+/sgrac-gmsh-support
+
+# Generated support meshes
+/parent.vtk
+
+# Local run/build logs
+/*.log

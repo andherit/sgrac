@@ -1,69 +1,73 @@
-# Prerequisites
-*.d
+# OS and editor files
+.DS_Store
+Thumbs.db
+*~
+*.bak
+*.orig
+*.swp
+*.swo
+.vscode/
+.idea/
 
-# Compiled Object files
-*.slo
-*.lo
+# Local Codex/agent workspace files
+.codex/
+.agents/
+
+# Generic logs and temporary files
+*.log
+*.tmp
+*.temp
+
+# Fortran/C/C++ compiler outputs
+*.d
 *.o
 *.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Linker files
-*.ilk
-
-# Debugger Files
-*.pdb
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-*.so.*
-
-
-# Fortran module files
+*.lo
+*.slo
 *.mod
 *.smod
-
-# Compiled Static libraries
-*.lai
-*.la
 *.a
+*.la
+*.lai
 *.lib
-
-# Executables
+*.so
+*.so.*
+*.dylib
+*.dll
 *.exe
 *.out
 *.app
+*.pdb
+*.ilk
+*.dwo
 
-# Build directories
+# Build directories and generated build metadata
 build/
 Build/
 build-*/
-
-# CMake generated files
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
-Makefile
 install_manifest.txt
 compile_commands.json
-
-# Temporary files
-*.tmp
-*.log
-*.bak
-*.swp
-
-# vcpkg
-vcpkg_installed/
-
-# debug information files
-*.dwo
-
-# test output & cache
 Testing/
 .cache/
+
+# Python cache and local environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# Local package/dependency directories
+vcpkg_installed/
+
+# Root-level SGRAC workflow outputs
+/parent.vtk
+/parent_geom.vtk
+/parent_masked.vtk
+/rupture.vtk

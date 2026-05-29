@@ -1,0 +1,12 @@
+# Local build outputs
+/sgrac-extract
+/*.o
+/*.mod
+/*.smod
+
+# Generated extraction inputs/outputs
+/parent_masked.vtk
+/rupture.vtk
+
+# Local run/build logs
+/*.log

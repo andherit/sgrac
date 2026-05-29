@@ -1,0 +1,12 @@
+# Local build outputs
+/sgrac-geometry
+/*.o
+/*.mod
+/*.smod
+
+# Generated geometry inputs/outputs
+/parent.vtk
+/parent_geom.vtk
+
+# Local run/build logs
+/*.log

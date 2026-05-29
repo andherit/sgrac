@@ -1,0 +1,12 @@
+# Local build outputs
+/sgrac-mask
+/*.o
+/*.mod
+/*.smod
+
+# Generated mask inputs/outputs
+/parent_geom.vtk
+/parent_masked.vtk
+
+# Local run/build logs
+/*.log
