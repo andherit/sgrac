@@ -15,9 +15,9 @@ Existing kinematic approaches often use simple rupture-velocity assumptions, suc
 
 A key hypothesis is that rupture propagation can be influenced by the directional relation between the rupture-front normal and the slip-gradient vector:
 
-```text
-local rupture behavior ~ f(grad(slip) · rupture_front_normal)
-```
+$$
+V_r \sim f(\nabla S \cdot \mathbf{n}_r)
+$$
 
 This allows the rupture to interact with slip patches in a directional way. For example, rupture may slow when entering a high-slip asperity while being able to propagate around it with less perturbation.
 
