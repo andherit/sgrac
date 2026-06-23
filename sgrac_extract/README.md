@@ -60,7 +60,7 @@ If parent node `1` is not selected, surviving nodes are numbered compactly from 
 ## Example
 
 ```bash
-../sgrac_gmsh_support/sgrac-gmsh-support lx=120000 ly=80000 lc=500 > parent.vtk
+../sgrac_gmsh_support/sgrac-gmsh-support lx=120000 lz=80000 lc=500 > parent.vtk
 ../sgrac_geometry/sgrac-geometry source=1 < parent.vtk > parent_geom.vtk
 ../sgrac_mask/sgrac-mask mw=6.5 stressdrop=3e6 model=ellipse anis=0.2 < parent_geom.vtk > parent_masked.vtk
 ./sgrac-extract < parent_masked.vtk > rupture.vtk

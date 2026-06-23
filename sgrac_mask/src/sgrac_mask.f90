@@ -4,17 +4,21 @@ program sgrac_mask
   use forparse
   use sgrac_vtk_mask_io
   use sgrac_radius_models
+  use sgrac_mask_border
   implicit none
 
   character(len=256) :: infile, outfile, model
   character(len=line_len), allocatable :: lines(:)
-  integer :: ierr, ierr_r0, ierr_mw, ierr_stressdrop, ierr_mu, nlines, npoints, ncell, i
+  integer :: ierr, ierr_r0, ierr_mw, ierr_stressdrop, ierr_mu, ierr_smooth_border
+  integer :: nlines, npoints, ncell, i, smooth_border_in
+  integer :: border_removed, border_added, border_add_candidates
   real :: r0_in, anis_in, theta0_in, rmin_in, mw_in, stressdrop_in, mu_in
   real(pr) :: r0, anis, theta0, rmin, mw, stressdrop, mu
   real(pr) :: m0, req, atarget, afinal, relerr, alpha, pi
   real(pr), allocatable :: theta(:), dg_cell(:), area_cell(:), shape(:), rtheta(:), phi(:)
   integer, allocatable :: mask(:)
   logical :: has_r0, has_mw, has_stressdrop, has_mu, has_physical_keyword, physical_mode
+  logical :: smooth_border
 
   infile = '-'
   outfile = '-'
@@ -26,6 +30,10 @@ program sgrac_mask
   mw_in = 0.0
   stressdrop_in = -1.0
   mu_in = -1.0
+  smooth_border_in = 0
+  border_removed = 0
+  border_added = 0
+  border_add_candidates = 0
 
   ierr = parse_arg('in', infile)
   ierr = parse_arg('out', outfile)
@@ -37,9 +45,14 @@ program sgrac_mask
   ierr_mw = parse_arg('mw', mw_in)
   ierr_stressdrop = parse_arg('stressdrop', stressdrop_in)
   ierr_mu = parse_arg('mu', mu_in)
+  ierr_smooth_border = parse_arg('smooth_border', smooth_border_in)
 
   if (ierr_r0 == PARSE_TYPE_ERROR) then
      write(error_unit,'(a)') 'sgrac-mask: invalid r0 value'
+     stop 1
+  endif
+  if (ierr_smooth_border == PARSE_TYPE_ERROR) then
+     write(error_unit,'(a)') 'sgrac-mask: invalid smooth_border=<0|1>'
      stop 1
   endif
 
@@ -51,6 +64,7 @@ program sgrac_mask
                          ierr_stressdrop == PARSE_OK .or. ierr_stressdrop == PARSE_TYPE_ERROR .or. &
                          ierr_mu == PARSE_OK .or. ierr_mu == PARSE_TYPE_ERROR
   physical_mode = .not. has_r0
+  smooth_border = smooth_border_in /= 0
 
   if (has_r0 .and. has_physical_keyword) then
      write(error_unit,'(a)') 'sgrac-mask: warning: r0 is present; physical scaling keywords are ignored'
@@ -144,6 +158,10 @@ program sgrac_mask
      endif
   enddo
 
+  if (smooth_border) then
+     call smooth_mask_border(lines, nlines, ncell, phi, mask, border_removed, border_added, border_add_candidates)
+  endif
+
   if (physical_mode) then
      afinal = sum(area_cell, mask = mask == 1)
      relerr = abs(afinal - atarget) / atarget
@@ -157,6 +175,11 @@ program sgrac_mask
      write(error_unit,'(a,es24.16)') '  Atarget = ', atarget
      write(error_unit,'(a,es24.16)') '  Afinal = ', afinal
      write(error_unit,'(a,es24.16)') '  relative area error = ', relerr
+     if (smooth_border) then
+        write(error_unit,'(a,i0)') '  smooth_border removed cells = ', border_removed
+        write(error_unit,'(a,i0)') '  smooth_border add candidates = ', border_add_candidates
+        write(error_unit,'(a,i0)') '  smooth_border added cells = ', border_added
+     endif
      if (afinal > 0._pr) then
         write(error_unit,'(a,es24.16)') '  implied mean slip = ', m0 / (mu * afinal)
      else
@@ -168,6 +191,11 @@ program sgrac_mask
   else
      write(error_unit,'(a)') 'sgrac-mask diagnostics:'
      write(error_unit,'(a)') '  mode = debug'
+     if (smooth_border) then
+        write(error_unit,'(a,i0)') '  smooth_border removed cells = ', border_removed
+        write(error_unit,'(a,i0)') '  smooth_border add candidates = ', border_add_candidates
+        write(error_unit,'(a,i0)') '  smooth_border added cells = ', border_added
+     endif
   endif
 
   call write_text_file_with_mask(trim(outfile), lines, nlines, rtheta, phi, mask, ncell)

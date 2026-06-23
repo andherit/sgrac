@@ -18,6 +18,12 @@ Physical moment scaling:
 sgrac-mask in=parent_geom.vtk out=parent_masked.vtk model=ellipse mw=6.0 stressdrop=3.0e6 anis=0.2 theta0=0
 ```
 
+Optional border smoothing:
+
+```bash
+sgrac-mask in=parent_geom.vtk out=parent_masked.vtk model=ellipse mw=6.0 stressdrop=3.0e6 anis=0.2 smooth_border=1
+```
+
 All dimensional quantities are S.I. units.
 
 ## Implemented radius model
@@ -44,6 +50,7 @@ mu      shear modulus in Pa, default 3.0e10; only used in physical diagnostics
 anis    anisotropy coefficient, default 0
 theta0  preferred elongation direction in radians, default 0
 rmin    optional lower clipping radius in meters, default 0; debug/geometric mode only
+smooth_border  optional mask post-processing, default 0
 ```
 
 If `r0` is present, the radius is:
@@ -85,6 +92,15 @@ where:
 phi = dg_cell - Rtheta
 mask = 1 if phi < 0, else 0
 ```
+
+If `smooth_border=1`, `sgrac-mask` applies a simple mask post-processing step before writing the final `mask` field:
+
+- remove selected cells with exactly two border edges;
+- add the same number of unselected cells with exactly two edges adjacent to selected cells;
+- rank add-candidates by smallest positive `phi`, so cells closest to the original boundary are used first;
+- only shared edges between `mask=1` and `mask=0` cells are border edges.
+
+Edges with `mask=1` on one side and no neighboring cell on the other side are not treated as border edges in this step. `Rtheta` and `phi` remain the original radius-law diagnostics; `mask` is the final post-processed selection.
 
 ## Figures
 

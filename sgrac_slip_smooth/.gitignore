@@ -1,0 +1,4 @@
+*.mod
+*.o
+sgrac-slip-smooth
+slip_raw.vtk

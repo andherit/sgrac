@@ -9,8 +9,8 @@ program sgrac_gmsh_support
   integer, parameter :: TRI3 = 2
   integer, parameter :: GMSH_ALGORITHM = 5
 
-  real :: lx_in, ly_in, lc_in, x0_in, y0_in, z0_in
-  real(pr) :: lx, ly, lc, x0, y0, z0
+  real :: lx_in, lz_in, lc_in, x0_in, y0_in, z0_in
+  real(pr) :: lx, lz, lc, x0, y0, z0
   integer :: ierr
   character(256) :: outname
   logical :: use_file
@@ -34,7 +34,7 @@ program sgrac_gmsh_support
   endif
 
   lx_in = 120000.0
-  ly_in = 80000.0
+  lz_in = 80000.0
   lc_in = 500.0
   x0_in = 0.0
   y0_in = 0.0
@@ -42,7 +42,7 @@ program sgrac_gmsh_support
   outname = ''
 
   ierr = parse_arg('lx', lx_in)
-  ierr = parse_arg('ly', ly_in)
+  ierr = parse_arg('lz', lz_in)
   ierr = parse_arg('lc', lc_in)
   ierr = parse_arg('x0', x0_in)
   ierr = parse_arg('y0', y0_in)
@@ -50,14 +50,14 @@ program sgrac_gmsh_support
   ierr = parse_arg('out', outname)
 
   lx = real(lx_in, pr)
-  ly = real(ly_in, pr)
+  lz = real(lz_in, pr)
   lc = real(lc_in, pr)
   x0 = real(x0_in, pr)
   y0 = real(y0_in, pr)
   z0 = real(z0_in, pr)
 
-  if (lx <= 0.0_pr .or. ly <= 0.0_pr .or. lc <= 0.0_pr) then
-     write(error_unit,*) 'ERROR: lx, ly and lc must be positive S.I. lengths in meters.'
+  if (lx <= 0.0_pr .or. lz <= 0.0_pr .or. lc <= 0.0_pr) then
+     write(error_unit,*) 'ERROR: lx, lz and lc must be positive S.I. lengths in meters.'
      stop 1
   endif
 
@@ -86,16 +86,16 @@ program sgrac_gmsh_support
   pc = gmsh_api%model%geo%addPoint(real(x0, c_double), real(y0, c_double), real(z0, c_double), &
                             real(lc, c_double), ierr=ierr_g)
   call check_gmsh(ierr_g, 'gmsh_api%model%geo%addPoint pc')
-  p1 = gmsh_api%model%geo%addPoint(real(x0 - 0.5_pr*lx, c_double), real(y0 - 0.5_pr*ly, c_double), real(z0, c_double), &
+  p1 = gmsh_api%model%geo%addPoint(real(x0 - 0.5_pr*lx, c_double), real(y0, c_double), real(z0 - 0.5_pr*lz, c_double), &
                             real(lc, c_double), ierr=ierr_g)
   call check_gmsh(ierr_g, 'gmsh_api%model%geo%addPoint p1')
-  p2 = gmsh_api%model%geo%addPoint(real(x0 + 0.5_pr*lx, c_double), real(y0 - 0.5_pr*ly, c_double), real(z0, c_double), &
+  p2 = gmsh_api%model%geo%addPoint(real(x0 + 0.5_pr*lx, c_double), real(y0, c_double), real(z0 - 0.5_pr*lz, c_double), &
                             real(lc, c_double), ierr=ierr_g)
   call check_gmsh(ierr_g, 'gmsh_api%model%geo%addPoint p2')
-  p3 = gmsh_api%model%geo%addPoint(real(x0 + 0.5_pr*lx, c_double), real(y0 + 0.5_pr*ly, c_double), real(z0, c_double), &
+  p3 = gmsh_api%model%geo%addPoint(real(x0 + 0.5_pr*lx, c_double), real(y0, c_double), real(z0 + 0.5_pr*lz, c_double), &
                             real(lc, c_double), ierr=ierr_g)
   call check_gmsh(ierr_g, 'gmsh_api%model%geo%addPoint p3')
-  p4 = gmsh_api%model%geo%addPoint(real(x0 - 0.5_pr*lx, c_double), real(y0 + 0.5_pr*ly, c_double), real(z0, c_double), &
+  p4 = gmsh_api%model%geo%addPoint(real(x0 - 0.5_pr*lx, c_double), real(y0, c_double), real(z0 + 0.5_pr*lz, c_double), &
                             real(lc, c_double), ierr=ierr_g)
   call check_gmsh(ierr_g, 'gmsh_api%model%geo%addPoint p4')
 
@@ -168,7 +168,7 @@ program sgrac_gmsh_support
   enddo
 
   call compact_used_nodes(xyz, tri, center_node, xyz_used, tri_used)
-  call write_vtk_polydata(unit_out, xyz_used, tri_used, lx, ly, lc, GMSH_ALGORITHM)
+  call write_vtk_polydata(unit_out, xyz_used, tri_used, lx, lz, lc, GMSH_ALGORITHM)
 
   if (use_file) close(unit_out)
   call gmsh_api%finalize(ierr_g)
@@ -191,18 +191,18 @@ contains
     endif
   end subroutine check_gmsh
 
-  subroutine write_vtk_polydata(unit, xyz, tri, lx, ly, lc, algorithm)
+  subroutine write_vtk_polydata(unit, xyz, tri, lx, lz, lc, algorithm)
     integer, intent(in) :: unit
     real(pr), intent(in) :: xyz(:,:)
     integer, intent(in) :: tri(:,:)
-    real(pr), intent(in) :: lx, ly, lc
+    real(pr), intent(in) :: lx, lz, lc
     integer, intent(in) :: algorithm
     integer :: i, nnode, ntri
     nnode = size(xyz,2)
     ntri = size(tri,2)
 
     write(unit,'(a)') '# vtk DataFile Version 3.0'
-    write(unit,'(a)') 'SGRAC gmsh parent support mesh; units: SI meters'
+    write(unit,'(a)') 'SGRAC gmsh parent support mesh on x-z fault plane; units: SI meters'
     write(unit,'(a)') 'ASCII'
     write(unit,'(a)') 'DATASET POLYDATA'
     write(unit,'(a,1x,i0,1x,a)') 'POINTS', nnode, 'double'
@@ -216,8 +216,8 @@ contains
     write(unit,'(a,1x,i0)') 'FIELD FieldData', 4
     write(unit,'(a)') 'lx_m 1 1 double'
     write(unit,'(es24.16)') lx
-    write(unit,'(a)') 'ly_m 1 1 double'
-    write(unit,'(es24.16)') ly
+    write(unit,'(a)') 'lz_m 1 1 double'
+    write(unit,'(es24.16)') lz
     write(unit,'(a)') 'lc_m 1 1 double'
     write(unit,'(es24.16)') lc
     write(unit,'(a)') 'gmsh_algorithm 1 1 int'
@@ -302,12 +302,12 @@ contains
     write(output_unit,'(a)') 'sgrac-gmsh-support: generate a triangular parent support mesh with gmsh.'
     write(output_unit,'(a)') ''
     write(output_unit,'(a)') 'Usage:'
-    write(output_unit,'(a)') '  sgrac-gmsh-support lx=120000 ly=80000 lc=500 > parent.vtk'
-    write(output_unit,'(a)') '  sgrac-gmsh-support lx=120000 ly=80000 lc=500 out=parent.vtk'
+    write(output_unit,'(a)') '  sgrac-gmsh-support lx=120000 lz=80000 lc=500 > parent.vtk'
+    write(output_unit,'(a)') '  sgrac-gmsh-support lx=120000 lz=80000 lc=500 out=parent.vtk'
     write(output_unit,'(a)') ''
     write(output_unit,'(a)') 'Parameters, all S.I. units:'
     write(output_unit,'(a)') '  lx        support length in meters      default 120000'
-    write(output_unit,'(a)') '  ly        support width in meters       default 80000'
+    write(output_unit,'(a)') '  lz        support depth span in meters  default 80000'
     write(output_unit,'(a)') '  lc        target gmsh size in meters    default 500'
     write(output_unit,'(a)') '  x0,y0,z0  support center in meters      default 0,0,0'
     write(output_unit,'(a)') '  out       optional output VTK file; stdout by default'
