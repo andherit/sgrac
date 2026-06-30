@@ -10,12 +10,14 @@ subroutine compute_cell_geometry(amesh, dg, area, dg_cell, centroid, grad_dg, th
   real(pr), intent(out) :: area(amesh%Ncells), dg_cell(amesh%Ncells), theta(amesh%Ncells)
   real(pr), intent(out) :: centroid(amesh%Ncells,3), grad_dg(amesh%Ncells,3)
   integer(pin) :: ic, n1, n2, n3
+  real(pr), parameter :: tol = 100._pr*epsilon(1._pr)
   real(pr) :: p1(3), p2(3), p3(3), v12(3), v13(3), normal(3), ex(3), ey(3)
-  real(pr) :: eh(3), eperp(3), gvec(3), globx(3), globy(3)
-  real(pr) :: l12, normn, x3, y3, dfdx, dfdy, f1, f2, f3, tmp
+  real(pr) :: eh(3), eperp(3), gvec(3), globx(3), globy(3), ez(3)
+  real(pr) :: l12, normn, x3, y3, dfdx, dfdy, f1, f2, f3, tmp, orient
 
   globx = (/1._pr, 0._pr, 0._pr/)
   globy = (/0._pr, 1._pr, 0._pr/)
+  ez = (/0._pr, 0._pr, 1._pr/)
 
   do ic=1,amesh%Ncells
      n1 = amesh%cell(ic,1); n2 = amesh%cell(ic,2); n3 = amesh%cell(ic,3)
@@ -57,18 +59,49 @@ subroutine compute_cell_geometry(amesh, dg, area, dg_cell, centroid, grad_dg, th
         grad_dg(ic,:) = gvec
      endif
 
-     eh = globx - dot_product(globx, normal)*normal
+     ! Zero angle is the local horizontal direction; positive angle points toward increasing depth.
+     eh = cross3(ez, normal)
      tmp = norm3(eh)
-     if (tmp <= 100._pr*epsilon(1._pr)) then
-        eh = globy - dot_product(globy, normal)*normal
-        tmp = norm3(eh)
-     endif
-     if (tmp <= 100._pr*epsilon(1._pr)) then
-        theta(ic) = 0._pr
-     else
+     if (tmp > tol) then
+        if (abs(dot_product(eh, globx)) > tol) then
+           orient = dot_product(eh, globx)
+        else
+           orient = dot_product(eh, globy)
+        endif
+        if (orient < 0._pr) eh = -eh
+
         eh = eh/tmp
-        eperp = cross3(normal, eh)
-        theta(ic) = atan2(dot_product(grad_dg(ic,:), eperp), dot_product(grad_dg(ic,:), eh))
+        eperp = ez - dot_product(ez, normal)*normal
+        tmp = norm3(eperp)
+        if (tmp <= tol) then
+           theta(ic) = 0._pr
+        else
+           eperp = eperp/tmp
+           theta(ic) = atan2(dot_product(grad_dg(ic,:), eperp), dot_product(grad_dg(ic,:), eh))
+        endif
+     else
+        eh = globx - dot_product(globx, normal)*normal
+        tmp = norm3(eh)
+        if (tmp <= tol) then
+           eh = globy - dot_product(globy, normal)*normal
+           tmp = norm3(eh)
+        endif
+        if (tmp <= tol) then
+           theta(ic) = 0._pr
+        else
+           eh = eh/tmp
+           eperp = globy - dot_product(globy, normal)*normal
+           eperp = eperp - dot_product(eperp, eh)*eh
+           tmp = norm3(eperp)
+           if (tmp <= tol) eperp = cross3(normal, eh)
+           tmp = norm3(eperp)
+           if (tmp <= tol) then
+              theta(ic) = 0._pr
+           else
+              eperp = eperp/tmp
+              theta(ic) = atan2(dot_product(grad_dg(ic,:), eperp), dot_product(grad_dg(ic,:), eh))
+           endif
+        endif
      endif
   enddo
 end subroutine compute_cell_geometry

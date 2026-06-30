@@ -27,7 +27,7 @@ Cell data:
 
 - `area`: triangle area, in m2
 - `dg_cell`: cell-average geodesic distance, in meters
-- `theta`: cellwise angle in radians, from projected global x direction
+- `theta`: cellwise angle in radians, from the local horizontal direction on the fault surface; positive toward increasing z/depth
 - `centroid`: cell centroid, in meters
 - `grad_dg`: P1 triangle gradient of `dg`, dimensionless
 
