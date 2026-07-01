@@ -21,7 +21,7 @@ sgrac-mask in=parent_geom.vtk out=parent_masked.vtk model=ellipse mw=6.0 stressd
 Optional border smoothing:
 
 ```bash
-sgrac-mask in=parent_geom.vtk out=parent_masked.vtk model=ellipse mw=6.0 stressdrop=3.0e6 anis=0.2 smooth_border=1
+sgrac-mask in=parent_geom.vtk out=parent_masked.vtk model=ellipse mw=6.0 stressdrop=3.0e6 anis=0.2 smooth_border=1 smooth_border_iter_max=1000 smooth_border_aperture_max=60
 ```
 
 All dimensional quantities are S.I. units.
@@ -51,6 +51,8 @@ anis    anisotropy coefficient, default 0
 theta0  preferred elongation direction in radians, default 0
 rmin    optional lower clipping radius in meters, default 0; debug/geometric mode only
 smooth_border  optional mask post-processing, default 0
+smooth_border_iter_max  maximum number of iterative border swaps, default ncell
+smooth_border_aperture_max  maximum candidate aperture angle in degrees, default 60.0
 ```
 
 If `r0` is present, the radius is:
@@ -93,14 +95,15 @@ phi = dg_cell - Rtheta
 mask = 1 if phi < 0, else 0
 ```
 
-If `smooth_border=1`, `sgrac-mask` applies a simple mask post-processing step before writing the final `mask` field:
+If `smooth_border=1`, `sgrac-mask` applies an iterative mask post-processing step before writing the final `mask` field:
 
-- remove selected cells with exactly two border edges;
-- add the same number of unselected cells with exactly two edges adjacent to selected cells;
-- rank add-candidates by smallest positive `phi`, so cells closest to the original boundary are used first;
+- recompute border connectivity and candidate aperture angles on the current mask;
+- select one `mask=1` cell with exactly two border edges for removal, choosing the smallest aperture angle and breaking ties with largest `phi`;
+- select one `mask=0` cell with exactly two edges adjacent to selected cells for addition, choosing the smallest aperture angle and breaking ties with smallest `phi`;
+- stop when either side has no candidate, after `smooth_border_iter_max` swaps, or when the best removal or addition aperture exceeds `smooth_border_aperture_max`;
 - only shared edges between `mask=1` and `mask=0` cells are border edges.
 
-Edges with `mask=1` on one side and no neighboring cell on the other side are not treated as border edges in this step. `Rtheta` and `phi` remain the original radius-law diagnostics; `mask` is the final post-processed selection.
+For a triangular candidate, the aperture is the internal triangle angle at the vertex shared by its two mask-border edges, computed from the VTK point coordinates. Edges with `mask=1` on one side and no neighboring cell on the other side are not treated as border edges in this step. `Rtheta` and `phi` remain the original radius-law diagnostics; `mask` is the final post-processed selection.
 
 ## Figures
 

@@ -8,12 +8,15 @@ program sgrac_mask
   implicit none
 
   character(len=256) :: infile, outfile, model
+  character(len=64) :: border_stop_reason
   character(len=line_len), allocatable :: lines(:)
   integer :: ierr, ierr_r0, ierr_mw, ierr_stressdrop, ierr_mu, ierr_smooth_border
-  integer :: nlines, npoints, ncell, i, smooth_border_in
-  integer :: border_removed, border_added, border_add_candidates
-  real :: r0_in, anis_in, theta0_in, rmin_in, mw_in, stressdrop_in, mu_in
-  real(pr) :: r0, anis, theta0, rmin, mw, stressdrop, mu
+  integer :: ierr_smooth_border_iter_max, ierr_smooth_border_aperture_max
+  integer :: nlines, npoints, ncell, i, smooth_border_in, smooth_border_iter_max
+  integer :: border_iter, border_removed, border_added, border_add_candidates
+  real :: r0_in, anis_in, theta0_in, rmin_in, mw_in, stressdrop_in, mu_in, smooth_border_aperture_max_in
+  real(pr) :: r0, anis, theta0, rmin, mw, stressdrop, mu, smooth_border_aperture_max
+  real(pr) :: border_remove_aperture, border_add_aperture
   real(pr) :: m0, req, atarget, afinal, relerr, alpha, pi
   real(pr), allocatable :: theta(:), dg_cell(:), area_cell(:), shape(:), rtheta(:), phi(:)
   integer, allocatable :: mask(:)
@@ -31,9 +34,15 @@ program sgrac_mask
   stressdrop_in = -1.0
   mu_in = -1.0
   smooth_border_in = 0
+  smooth_border_iter_max = -1
+  smooth_border_aperture_max_in = 60.0
+  border_iter = 0
   border_removed = 0
   border_added = 0
   border_add_candidates = 0
+  border_stop_reason = 'not_run'
+  border_remove_aperture = -1._pr
+  border_add_aperture = -1._pr
 
   ierr = parse_arg('in', infile)
   ierr = parse_arg('out', outfile)
@@ -46,6 +55,8 @@ program sgrac_mask
   ierr_stressdrop = parse_arg('stressdrop', stressdrop_in)
   ierr_mu = parse_arg('mu', mu_in)
   ierr_smooth_border = parse_arg('smooth_border', smooth_border_in)
+  ierr_smooth_border_iter_max = parse_arg('smooth_border_iter_max', smooth_border_iter_max)
+  ierr_smooth_border_aperture_max = parse_arg('smooth_border_aperture_max', smooth_border_aperture_max_in)
 
   if (ierr_r0 == PARSE_TYPE_ERROR) then
      write(error_unit,'(a)') 'sgrac-mask: invalid r0 value'
@@ -53,6 +64,14 @@ program sgrac_mask
   endif
   if (ierr_smooth_border == PARSE_TYPE_ERROR) then
      write(error_unit,'(a)') 'sgrac-mask: invalid smooth_border=<0|1>'
+     stop 1
+  endif
+  if (ierr_smooth_border_iter_max == PARSE_TYPE_ERROR) then
+     write(error_unit,'(a)') 'sgrac-mask: invalid smooth_border_iter_max=<positive integer>'
+     stop 1
+  endif
+  if (ierr_smooth_border_aperture_max == PARSE_TYPE_ERROR .or. smooth_border_aperture_max_in <= 0.0) then
+     write(error_unit,'(a)') 'sgrac-mask: invalid smooth_border_aperture_max=<positive degrees>'
      stop 1
   endif
 
@@ -119,6 +138,12 @@ program sgrac_mask
 
   call read_text_file(trim(infile), lines, nlines)
   call get_polydata_counts(lines, nlines, npoints, ncell)
+  if (ierr_smooth_border_iter_max /= PARSE_OK) smooth_border_iter_max = ncell
+  if (smooth_border_iter_max < 1) then
+     write(error_unit,'(a)') 'sgrac-mask: invalid smooth_border_iter_max=<positive integer>'
+     stop 1
+  endif
+  smooth_border_aperture_max = real(smooth_border_aperture_max_in, pr) * pi / 180._pr
 
   allocate(theta(ncell), dg_cell(ncell), area_cell(ncell), shape(ncell), rtheta(ncell), phi(ncell), mask(ncell))
   call read_cell_scalar(lines, nlines, ncell, 'theta', theta)
@@ -159,7 +184,9 @@ program sgrac_mask
   enddo
 
   if (smooth_border) then
-     call smooth_mask_border(lines, nlines, ncell, phi, mask, border_removed, border_added, border_add_candidates)
+     call smooth_mask_border(lines, nlines, ncell, phi, mask, smooth_border_iter_max, smooth_border_aperture_max, &
+                             border_iter, border_removed, border_added, border_add_candidates, border_stop_reason, &
+                             border_remove_aperture, border_add_aperture)
   endif
 
   if (physical_mode) then
@@ -176,9 +203,15 @@ program sgrac_mask
      write(error_unit,'(a,es24.16)') '  Afinal = ', afinal
      write(error_unit,'(a,es24.16)') '  relative area error = ', relerr
      if (smooth_border) then
+        write(error_unit,'(a,i0)') '  smooth_border iter max = ', smooth_border_iter_max
+        write(error_unit,'(a,es24.16)') '  smooth_border aperture max deg = ', smooth_border_aperture_max_in
+        write(error_unit,'(a,i0)') '  smooth_border iterations = ', border_iter
         write(error_unit,'(a,i0)') '  smooth_border removed cells = ', border_removed
-        write(error_unit,'(a,i0)') '  smooth_border add candidates = ', border_add_candidates
         write(error_unit,'(a,i0)') '  smooth_border added cells = ', border_added
+        write(error_unit,'(a,a)') '  smooth_border stop reason = ', trim(border_stop_reason)
+        call write_aperture_diagnostic('  smooth_border final remove aperture deg = ', border_remove_aperture, pi)
+        call write_aperture_diagnostic('  smooth_border final add aperture deg = ', border_add_aperture, pi)
+        write(error_unit,'(a,i0)') '  smooth_border final add candidates = ', border_add_candidates
      endif
      if (afinal > 0._pr) then
         write(error_unit,'(a,es24.16)') '  implied mean slip = ', m0 / (mu * afinal)
@@ -192,11 +225,29 @@ program sgrac_mask
      write(error_unit,'(a)') 'sgrac-mask diagnostics:'
      write(error_unit,'(a)') '  mode = debug'
      if (smooth_border) then
+        write(error_unit,'(a,i0)') '  smooth_border iter max = ', smooth_border_iter_max
+        write(error_unit,'(a,es24.16)') '  smooth_border aperture max deg = ', smooth_border_aperture_max_in
+        write(error_unit,'(a,i0)') '  smooth_border iterations = ', border_iter
         write(error_unit,'(a,i0)') '  smooth_border removed cells = ', border_removed
-        write(error_unit,'(a,i0)') '  smooth_border add candidates = ', border_add_candidates
         write(error_unit,'(a,i0)') '  smooth_border added cells = ', border_added
+        write(error_unit,'(a,a)') '  smooth_border stop reason = ', trim(border_stop_reason)
+        call write_aperture_diagnostic('  smooth_border final remove aperture deg = ', border_remove_aperture, pi)
+        call write_aperture_diagnostic('  smooth_border final add aperture deg = ', border_add_aperture, pi)
+        write(error_unit,'(a,i0)') '  smooth_border final add candidates = ', border_add_candidates
      endif
   endif
 
   call write_text_file_with_mask(trim(outfile), lines, nlines, rtheta, phi, mask, ncell)
+contains
+
+subroutine write_aperture_diagnostic(label, aperture, pi)
+  character(len=*), intent(in) :: label
+  real(pr), intent(in) :: aperture, pi
+
+  if (aperture < 0._pr) then
+     write(error_unit,'(a)') trim(label)//'none'
+  else
+     write(error_unit,'(a,es24.16)') label, aperture * 180._pr / pi
+  endif
+end subroutine write_aperture_diagnostic
 end program sgrac_mask
