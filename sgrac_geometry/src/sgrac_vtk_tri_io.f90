@@ -59,6 +59,7 @@ subroutine write_geometry_vtk(filename, amesh, dg, area, dg_cell, centroid, grad
   real(pr), intent(in) :: area(amesh%Ncells), dg_cell(amesh%Ncells), theta(amesh%Ncells)
   real(pr), intent(in) :: centroid(amesh%Ncells,3), grad_dg(amesh%Ncells,3)
   integer :: unit, ios, i
+  real(pr) :: theta_deg(amesh%Ncells)
 
   if (len_trim(filename) == 0 .or. trim(filename) == '-') then
      unit = 6
@@ -67,8 +68,10 @@ subroutine write_geometry_vtk(filename, amesh, dg, area, dg_cell, centroid, grad
      if (ios /= 0) stop 'sgrac-geometry: cannot open output VTK file'
   endif
 
+  theta_deg = theta * 180._pr / acos(-1._pr)
+
   write(unit,'(a)') '# vtk DataFile Version 3.0'
-  write(unit,'(a)') 'SGRAC geometry fields, SI units'
+  write(unit,'(a)') 'SGRAC geometry fields, SI units except theta in degrees'
   write(unit,'(a)') 'ASCII'
   write(unit,'(a)') 'DATASET POLYDATA'
   write(unit,'(a,i0,a)') 'POINTS ', amesh%Nnodes, ' double'
@@ -90,7 +93,7 @@ subroutine write_geometry_vtk(filename, amesh, dg, area, dg_cell, centroid, grad
   write(unit,'(a,i0)') 'CELL_DATA ', amesh%Ncells
   call write_cell_scalar(unit, 'area', area, amesh%Ncells)
   call write_cell_scalar(unit, 'dg_cell', dg_cell, amesh%Ncells)
-  call write_cell_scalar(unit, 'theta', theta, amesh%Ncells)
+  call write_cell_scalar(unit, 'theta', theta_deg, amesh%Ncells)
   call write_cell_vector(unit, 'centroid', centroid, amesh%Ncells)
   call write_cell_vector(unit, 'grad_dg', grad_dg, amesh%Ncells)
 

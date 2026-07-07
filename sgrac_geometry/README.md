@@ -27,7 +27,7 @@ Cell data:
 
 - `area`: triangle area, in m2
 - `dg_cell`: cell-average geodesic distance, in meters
-- `theta`: cellwise angle in radians, from the local horizontal direction on the fault surface; positive toward increasing z/depth
+- `theta`: cellwise local bearing of the geodesic-distance gradient, in degrees; `theta=0` points along the projected downward/down-dip direction, and positive theta is measured toward local strike as defined by an upward-looking cell normal
 - `centroid`: cell centroid, in meters
 - `grad_dg`: P1 triangle gradient of `dg`, dimensionless
 
@@ -40,11 +40,11 @@ Cell data:
 `area`: triangle area.
 
 ![Cellwise theta](image/theta.png)
-`theta`: cellwise propagation angle.
+`theta`: cellwise propagation angle in the local down-dip/strike frame.
 
 ## Notes
 
-- S.I. units only.
+- S.I. units for dimensional quantities; angular `theta` output is in degrees for VTK inspection.
 - Triangles only.
 - No `CELL_TYPES`; the mesh is written as VTK legacy `POLYDATA` with `POLYGONS`.
 - Topology is rebuilt every run using `compntoc` and `compnton` from `trilat-distance`.

@@ -107,9 +107,10 @@ program sgrac_mask
      stop 1
   endif
 
+  pi = acos(-1._pr)
   r0 = real(r0_in, pr)
   anis = real(anis_in, pr)
-  theta0 = real(theta0_in, pr)
+  theta0 = real(theta0_in, pr) * pi / 180._pr
   rmin = real(rmin_in, pr)
   mw = real(mw_in, pr)
   stressdrop = real(stressdrop_in, pr)
@@ -118,7 +119,6 @@ program sgrac_mask
   else
      mu = 3.0e10_pr
   endif
-  pi = acos(-1._pr)
 
   if (has_r0 .and. r0 <= 0._pr) then
      write(error_unit,'(a)') 'sgrac-mask: r0 must be positive'
@@ -147,6 +147,7 @@ program sgrac_mask
 
   allocate(theta(ncell), dg_cell(ncell), area_cell(ncell), shape(ncell), rtheta(ncell), phi(ncell), mask(ncell))
   call read_cell_scalar(lines, nlines, ncell, 'theta', theta)
+  theta = theta * pi / 180._pr
   call read_cell_scalar(lines, nlines, ncell, 'dg_cell', dg_cell)
 
   select case(trim(model))

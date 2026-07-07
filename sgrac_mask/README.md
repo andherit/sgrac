@@ -24,7 +24,7 @@ Optional border smoothing:
 sgrac-mask in=parent_geom.vtk out=parent_masked.vtk model=ellipse mw=6.0 stressdrop=3.0e6 anis=0.2 smooth_border=1 smooth_border_iter_max=1000 smooth_border_aperture_max=60
 ```
 
-All dimensional quantities are S.I. units.
+All dimensional quantities are S.I. units. User-facing angles are in degrees.
 
 ## Implemented radius model
 
@@ -40,6 +40,8 @@ with dimensionless shape:
 f(theta) = 1 + anis * cos(2 * (theta - theta0))
 ```
 
+`theta` and `theta0` are converted to radians internally before this expression is evaluated.
+
 Parameters:
 
 ```text
@@ -48,7 +50,7 @@ mw      moment magnitude; required if r0 is absent
 stressdrop  stress drop in Pa; required if r0 is absent
 mu      shear modulus in Pa, default 3.0e10; only used in physical diagnostics
 anis    anisotropy coefficient, default 0
-theta0  preferred elongation direction in radians, default 0
+theta0  preferred elongation direction in degrees, default 0; theta0=0 aligns with local down-dip, theta0=90 aligns with local strike
 rmin    optional lower clipping radius in meters, default 0; debug/geometric mode only
 smooth_border  optional mask post-processing, default 0
 smooth_border_iter_max  maximum number of iterative border swaps, default ncell
@@ -76,6 +78,10 @@ R(theta) = alpha * f(theta)
 ```
 
 `model=ellipse` is the only implemented model in v0.
+
+`theta` is read from `sgrac-geometry` in degrees as a cellwise local bearing of the geodesic-distance gradient.
+With the current convention, `theta=0` points along the projected downward/down-dip direction and positive `theta` is measured toward local strike as defined by an upward-looking cell normal.
+Consequently, `theta0=0` elongates the mask down-dip/up-dip, while `theta0=90` elongates it along strike. `sgrac-mask` converts angles to radians internally before evaluating the radius law.
 
 ## Appended fields
 

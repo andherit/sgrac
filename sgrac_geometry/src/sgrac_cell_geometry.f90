@@ -12,11 +12,9 @@ subroutine compute_cell_geometry(amesh, dg, area, dg_cell, centroid, grad_dg, th
   integer(pin) :: ic, n1, n2, n3
   real(pr), parameter :: tol = 100._pr*epsilon(1._pr)
   real(pr) :: p1(3), p2(3), p3(3), v12(3), v13(3), normal(3), ex(3), ey(3)
-  real(pr) :: eh(3), eperp(3), gvec(3), globx(3), globy(3), ez(3)
-  real(pr) :: l12, normn, x3, y3, dfdx, dfdy, f1, f2, f3, tmp, orient
+  real(pr) :: er(3), edip(3), estrike(3), gvec(3), normal_use(3), ez(3)
+  real(pr) :: l12, normn, x3, y3, dfdx, dfdy, f1, f2, f3, tmp
 
-  globx = (/1._pr, 0._pr, 0._pr/)
-  globy = (/0._pr, 1._pr, 0._pr/)
   ez = (/0._pr, 0._pr, 1._pr/)
 
   do ic=1,amesh%Ncells
@@ -59,50 +57,38 @@ subroutine compute_cell_geometry(amesh, dg, area, dg_cell, centroid, grad_dg, th
         grad_dg(ic,:) = gvec
      endif
 
-     ! Zero angle is the local horizontal direction; positive angle points toward increasing depth.
-     eh = cross3(ez, normal)
-     tmp = norm3(eh)
-     if (tmp > tol) then
-        if (abs(dot_product(eh, globx)) > tol) then
-           orient = dot_product(eh, globx)
-        else
-           orient = dot_product(eh, globy)
-        endif
-        if (orient < 0._pr) eh = -eh
-
-        eh = eh/tmp
-        eperp = ez - dot_product(ez, normal)*normal
-        tmp = norm3(eperp)
-        if (tmp <= tol) then
-           theta(ic) = 0._pr
-        else
-           eperp = eperp/tmp
-           theta(ic) = atan2(dot_product(grad_dg(ic,:), eperp), dot_product(grad_dg(ic,:), eh))
-        endif
-     else
-        eh = globx - dot_product(globx, normal)*normal
-        tmp = norm3(eh)
-        if (tmp <= tol) then
-           eh = globy - dot_product(globy, normal)*normal
-           tmp = norm3(eh)
-        endif
-        if (tmp <= tol) then
-           theta(ic) = 0._pr
-        else
-           eh = eh/tmp
-           eperp = globy - dot_product(globy, normal)*normal
-           eperp = eperp - dot_product(eperp, eh)*eh
-           tmp = norm3(eperp)
-           if (tmp <= tol) eperp = cross3(normal, eh)
-           tmp = norm3(eperp)
-           if (tmp <= tol) then
-              theta(ic) = 0._pr
-           else
-              eperp = eperp/tmp
-              theta(ic) = atan2(dot_product(grad_dg(ic,:), eperp), dot_product(grad_dg(ic,:), eh))
-           endif
-        endif
+     ! Theta is the local bearing of grad_dg in the fault tangent plane.
+     ! z is positive downward; theta=0 points down-dip, and positive theta points
+     ! toward the strike direction defined by an upward-looking cell normal.
+     ! Fallback theta=0 cases below are geometrically undefined angles, not physical zero bearings.
+     gvec = grad_dg(ic,:)
+     tmp = norm3(gvec)
+     if (tmp <= tol) then
+        theta(ic) = 0._pr
+        cycle
      endif
+     er = gvec / tmp
+
+     normal_use = normal
+     if (normal_use(3) > 0._pr) normal_use = -normal_use
+
+     edip = ez - dot_product(ez, normal_use)*normal_use
+     tmp = norm3(edip)
+     if (tmp <= tol) then
+        theta(ic) = 0._pr
+        cycle
+     endif
+     edip = edip / tmp
+
+     estrike = cross3(edip, normal_use)
+     tmp = norm3(estrike)
+     if (tmp <= tol) then
+        theta(ic) = 0._pr
+        cycle
+     endif
+     estrike = estrike / tmp
+
+     theta(ic) = atan2(dot_product(er, estrike), dot_product(er, edip))
   enddo
 end subroutine compute_cell_geometry
 
