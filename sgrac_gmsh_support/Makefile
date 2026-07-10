@@ -7,15 +7,19 @@ LDLIBS ?= -lgmsh
 SRC_DIR := src
 OBJ_DIR := build/obj
 MOD_DIR := build/mod
+BIN_DIR ?= ../bin
 
-TARGET := sgrac-gmsh-support
+TARGET := $(BIN_DIR)/sgrac-gmsh-support
 OBJS := $(OBJ_DIR)/forparse.o $(OBJ_DIR)/gmsh.o $(OBJ_DIR)/sgrac_gmsh_support.o
 
 .PHONY: all clean
 all: $(TARGET)
 
-$(TARGET): $(OBJS)
+$(TARGET): $(OBJS) | $(BIN_DIR)
 	$(FC) $(FFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
+
+$(BIN_DIR):
+	mkdir -p $(BIN_DIR)
 
 $(OBJ_DIR) $(MOD_DIR):
 	mkdir -p $@

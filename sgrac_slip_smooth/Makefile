@@ -2,14 +2,19 @@ FC ?= gfortran
 FFLAGS ?= -O2 -Wall -Wextra -fcheck=all
 SRC = src
 SUPPORT_SRC = ../sgrac_slip_support/src
+BIN_DIR ?= ../bin
+EXE = $(BIN_DIR)/sgrac-slip-smooth
 
 OBJS = generic.o lists.o LAT_mesh.o LAT_distance.o distance.o forparse.o \
        sgrac_slip_support.o sgrac_vtk_slip_io.o sgrac_slip_smooth.o
 
-all: sgrac-slip-smooth
+all: $(EXE)
 
-sgrac-slip-smooth: $(OBJS)
+$(EXE): $(OBJS) | $(BIN_DIR)
 	$(FC) $(FFLAGS) -o $@ $(OBJS)
+
+$(BIN_DIR):
+	mkdir -p $(BIN_DIR)
 
 generic.o: $(SRC)/generic.f90
 	$(FC) $(FFLAGS) -c $<
@@ -39,4 +44,4 @@ sgrac_slip_smooth.o: $(SRC)/sgrac_slip_smooth.f90 generic.o forparse.o LAT_mesh.
 	$(FC) $(FFLAGS) -c $<
 
 clean:
-	rm -f *.o *.mod sgrac-slip-smooth
+	rm -f *.o *.mod $(EXE)

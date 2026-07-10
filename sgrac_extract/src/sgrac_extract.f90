@@ -50,23 +50,12 @@ program sgrac_extract
 
   old2new = 0_pin
   nchild_points = 0
-  if (used(1)) then
-     nchild_points = 1
-     old2new(1) = 1_pin
-     do i=2,npoints
-        if (used(i)) then
-           nchild_points = nchild_points + 1
-           old2new(i) = int(nchild_points, pin)
-        endif
-     enddo
-  else
-     do i=1,npoints
-        if (used(i)) then
-           nchild_points = nchild_points + 1
-           old2new(i) = int(nchild_points, pin)
-        endif
-     enddo
-  endif
+  do i=1,npoints
+     if (used(i)) then
+        nchild_points = nchild_points + 1
+        old2new(i) = int(nchild_points, pin)
+     endif
+  enddo
 
   allocate(child_px(nchild_points), child_py(nchild_points), child_pz(nchild_points))
   do i=1,npoints

@@ -92,6 +92,29 @@ subroutine compute_cell_geometry(amesh, dg, area, dg_cell, centroid, grad_dg, th
   enddo
 end subroutine compute_cell_geometry
 
+subroutine compute_foci_cell_geometry(amesh, dg_f1, dg_f2, area, centroid, dg_f1_cell, dg_f2_cell, dg_sum_cell)
+  type(mesh), intent(in) :: amesh
+  real(pr), intent(in) :: dg_f1(amesh%Nnodes), dg_f2(amesh%Nnodes)
+  real(pr), intent(out) :: area(amesh%Ncells), centroid(amesh%Ncells,3)
+  real(pr), intent(out) :: dg_f1_cell(amesh%Ncells), dg_f2_cell(amesh%Ncells), dg_sum_cell(amesh%Ncells)
+  integer(pin) :: ic, n1, n2, n3
+  real(pr) :: p1(3), p2(3), p3(3), v12(3), v13(3)
+
+  do ic=1,amesh%Ncells
+     n1 = amesh%cell(ic,1); n2 = amesh%cell(ic,2); n3 = amesh%cell(ic,3)
+     p1 = (/amesh%px(n1), amesh%py(n1), amesh%pz(n1)/)
+     p2 = (/amesh%px(n2), amesh%py(n2), amesh%pz(n2)/)
+     p3 = (/amesh%px(n3), amesh%py(n3), amesh%pz(n3)/)
+     v12 = p2-p1
+     v13 = p3-p1
+     area(ic) = 0.5_pr * norm3(cross3(v12, v13))
+     centroid(ic,:) = (p1+p2+p3)/3._pr
+     dg_f1_cell(ic) = (dg_f1(n1)+dg_f1(n2)+dg_f1(n3))/3._pr
+     dg_f2_cell(ic) = (dg_f2(n1)+dg_f2(n2)+dg_f2(n3))/3._pr
+     dg_sum_cell(ic) = dg_f1_cell(ic) + dg_f2_cell(ic)
+  enddo
+end subroutine compute_foci_cell_geometry
+
 pure function cross3(a,b) result(c)
   real(pr), intent(in) :: a(3), b(3)
   real(pr) :: c(3)

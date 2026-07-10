@@ -71,3 +71,7 @@ vcpkg_installed/
 /parent_geom.vtk
 /parent_masked.vtk
 /rupture.vtk
+
+# Centralized SGRAC executables
+/bin/*
+!/bin/.gitkeep

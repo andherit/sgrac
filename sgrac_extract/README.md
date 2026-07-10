@@ -1,4 +1,4 @@
-# sgrac-extract v0
+# sgrac-extract
 
 `sgrac-extract` is the fourth SGRAC filter. It reads a VTK legacy `POLYDATA` triangular mesh containing a `CELL_DATA` scalar mask field, extracts selected triangles, and writes a compact child `POLYDATA` mesh.
 
@@ -51,11 +51,8 @@ mask == 1
 
 ## Node Numbering
 
-The child mesh is compactly renumbered.
-
-If parent node `1` belongs to the selected cell set, it remains child node `1`. Other surviving nodes are then numbered from `2` upward in ascending parent-node order.
-
-If parent node `1` is not selected, surviving nodes are numbered compactly from `1` upward in ascending parent-node order.
+The child mesh is compactly renumbered from `1` upward in ascending parent-node order.
+Parent node identifiers are not preserved in the extracted mesh.
 
 ## Example
 
@@ -71,7 +68,6 @@ Expected result:
 - `rupture.vtk` contains only `POINTS` and `POLYGONS`.
 - No attributes are present.
 - The mesh is compactly renumbered.
-- If parent node `1` is in the rupture, it remains node `1`.
 
 ## Figure
 
