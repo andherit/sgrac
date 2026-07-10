@@ -1,13 +1,24 @@
 # sgrac-slip-support v0
 
-`sgrac_slip_support` contains reusable support routines for SGRAC slip-field modules.
+`sgrac-slip-support` contains reusable support routines for SGRAC mesh-field and slip-field modules.
 
 It is a support/library package only. It does not build a standalone pipeline executable.
 
-## Routines
+The support layer is split into two modules so future field-generation filters, such as `sgrac-pdf`, can reuse generic mesh utilities without depending on slip-specific physics.
+
+## `sgrac_mesh_field_support`
+
+Generic mesh geometry utilities:
 
 - compute triangle cell centers from node coordinates and triangular connectivity
 - compute triangle cell areas in m2
+
+This module contains no slip-specific or earthquake-specific logic.
+
+## `sgrac_slip_support`
+
+Slip-physics utilities:
+
 - compute scalar seismic moment
 - convert between scalar moment and moment magnitude
 - rescale a cell slip field to a target scalar moment
@@ -41,4 +52,4 @@ M0 = 10 ** (1.5 * Mw + 9.1)
 make
 ```
 
-This compiles `generic.o`, `sgrac_slip_support.o`, and the corresponding module files.
+This compiles `generic.o`, `sgrac_mesh_field_support.o`, `sgrac_slip_support.o`, and the corresponding module files.

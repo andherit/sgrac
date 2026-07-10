@@ -6,6 +6,7 @@ program sgrac_slip_smooth
   use LAT_distance
   use lists
   use distance
+  use sgrac_mesh_field_support
   use sgrac_slip_support
   use sgrac_vtk_slip_io
   implicit none
