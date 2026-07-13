@@ -36,16 +36,17 @@ before any future normalization. The Gaussian is not area-weighted.
 ## mode=normalize
 
 `mode=normalize` converts the temporary accumulator into the final
-area-normalized `CELL_DATA` scalar field named `pdf`:
+dimensionless cell-probability `CELL_DATA` scalar field named `pdf`:
 
 ```text
 I = sum_i(pdf_weight_i * area_i)
-pdf_i = pdf_weight_i / I
-sum_i(pdf_i * area_i) = 1
+pdf_i = pdf_weight_i * area_i / I
+sum_i(pdf_i) = 1
 ```
 
-Triangle areas are recomputed from the mesh geometry. The final `pdf` has units
-of `m^-2`.
+Triangle areas are recomputed from the mesh geometry. The area correction is
+already applied during normalization, so the final `pdf` is a dimensionless
+probability mass associated with each triangle, not a probability density.
 
 The normalize output is a clean interface file for K223D. It removes internal
 construction fields:
@@ -143,9 +144,10 @@ sgrac-pdf \
 `pdf_weight` is an unnormalized intermediate accumulator. It is not the final
 normalized `pdf` field.
 
-`pdf` is the final area-normalized density field intended for K223D. K223D will
-use cell probabilities proportional to `pdf_i * area_i`; because `sgrac-pdf`
-normalizes the density, the sum of these probabilities is one.
+`pdf` is the final cell-probability field intended for direct compatibility
+with the current K223D cumulative sampling implementation. The area correction
+has already been applied by `sgrac-pdf`, so K223D can consume `pdf` directly as
+a discrete probability attached to each triangle.
 
 ## Build
 

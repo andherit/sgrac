@@ -210,11 +210,11 @@ subroutine run_normalize()
      stop 1
   endif
 
-  pdf = pdf_weight / integral
-  check_integral = sum(pdf * areas)
+  pdf = pdf_weight * areas / integral
+  check_integral = sum(pdf)
   tol = 100._pr * epsilon(1._pr) * max(1._pr, abs(check_integral))
   if (abs(check_integral - 1._pr) > tol) then
-     write(error_unit,'(a,es24.16)') 'sgrac-pdf: normalized area integral check failed: ', check_integral
+     write(error_unit,'(a,es24.16)') 'sgrac-pdf: probability sum check failed: ', check_integral
      stop 1
   endif
 
@@ -227,7 +227,7 @@ subroutine run_normalize()
   write(error_unit,'(a,es24.16)') '  total rupture area = ', total_area
   write(error_unit,'(a,es24.16)') '  minimum pdf = ', minval(pdf)
   write(error_unit,'(a,es24.16)') '  maximum pdf = ', maxval(pdf)
-  write(error_unit,'(a,es24.16)') '  normalized area integral = ', check_integral
+  write(error_unit,'(a,es24.16)') '  probability sum = ', check_integral
   write(error_unit,'(a)') '  removed field = pdf_weight'
   write(error_unit,'(a)') '  removed field = area'
   write(error_unit,'(a)') '  output field = pdf'
