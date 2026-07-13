@@ -8,7 +8,7 @@ program sgrac_slip_smooth
   use distance
   use sgrac_mesh_field_support
   use sgrac_slip_support
-  use sgrac_vtk_slip_io
+  use sgrac_vtk_field_io
   implicit none
 
   type(mesh) :: amesh
@@ -104,7 +104,7 @@ program sgrac_slip_smooth
      stop 1
   endif
 
-  call read_slip_vtk(trim(infile), lines, nlines, px, py, pz, cell, npoints, ncells)
+  call read_vtk_mesh_and_lines(trim(infile), lines, nlines, px, py, pz, cell, npoints, ncells)
   if (center_node < 1 .or. center_node > npoints) then
      write(error_unit,'(a,i0,a,i0,a)') 'sgrac-slip-smooth: center_node ', center_node, &
         ' outside valid range 1..', npoints, ''
@@ -162,7 +162,7 @@ program sgrac_slip_smooth
      slip = peak_slip * slip
   endif
 
-  call write_vtk_with_cell_scalar(trim(outfile), lines, nlines, 'slip', slip, ncells)
+  call write_or_replace_cell_scalar(trim(outfile), lines, nlines, 'slip', slip, ncells)
 
   call free_nton(nton)
   call free_ntoc(ntoc)

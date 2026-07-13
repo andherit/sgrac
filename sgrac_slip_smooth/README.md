@@ -54,6 +54,8 @@ For quick checks, `peak_slip=<m>` may be provided instead. If `peak_slip` is pre
 
 The output `slip` field is `CELL_DATA`. Existing `POINT_DATA` and `CELL_DATA` are preserved when possible. If a cell scalar field named `slip` already exists, it is replaced.
 
+`sgrac-slip-smooth` uses the shared `sgrac_vtk_field_io` module for VTK legacy scalar-field I/O. That module can read and replace arbitrary `CELL_DATA` scalars and is shared infrastructure for future field-based SGRAC filters such as `sgrac-pdf`. This filter still writes only the `slip` field; `sgrac-pdf` is not part of this module.
+
 ## Validation
 
 Using the sample rupture mesh from `sgrac_extract`:
