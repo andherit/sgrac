@@ -17,6 +17,7 @@ Thumbs.db
 *.log
 *.tmp
 *.temp
+scratch_*.vtk
 
 # Fortran/C/C++ compiler outputs
 *.d
