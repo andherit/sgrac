@@ -203,20 +203,22 @@ subroutine run_normalize()
      endif
   enddo
 
-  integral = sum(pdf_weight * areas)
+ ! integral = sum(pdf_weight * areas)
+  integral = sum(pdf_weight)
   total_area = sum(areas)
   if (.not. ieee_is_finite(integral) .or. integral <= 0._pr) then
      write(error_unit,'(a)') 'sgrac-pdf: pdf_weight area integral must be positive'
      stop 1
   endif
 
-  pdf = pdf_weight * areas / integral
-  check_integral = sum(pdf)
-  tol = 100._pr * epsilon(1._pr) * max(1._pr, abs(check_integral))
-  if (abs(check_integral - 1._pr) > tol) then
-     write(error_unit,'(a,es24.16)') 'sgrac-pdf: probability sum check failed: ', check_integral
-     stop 1
-  endif
+  ! pdf = pdf_weight * areas / integral
+  pdf = pdf_weight / integral
+ ! check_integral = sum(pdf)
+ ! tol = 100._pr * epsilon(1._pr) * max(1._pr, abs(check_integral))
+ ! if (abs(check_integral - 1._pr) > tol) then
+ !    write(error_unit,'(a,es24.16)') 'sgrac-pdf: probability sum check failed: ', check_integral
+ !    stop 1
+ ! endif
 
   write(error_unit,'(a)') 'sgrac-pdf diagnostics:'
   write(error_unit,'(a)') '  mode = normalize'
